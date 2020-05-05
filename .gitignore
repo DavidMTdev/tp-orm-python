@@ -1,1 +1,3 @@
 *.vuerd.json
+
+**/env
