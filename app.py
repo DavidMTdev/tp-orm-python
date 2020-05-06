@@ -82,20 +82,24 @@ class Products(db.Model):
         return '<Products {}>'.format(self.product_name)
 
 
-class Stocks(db.Model):
-    __tablename__ = 'stocks'
+# class Stocks(db.Model):
+#     __tablename__ = 'stocks'
 
-    stock_id = db.Column(db.Integer, primary_key=True)
-    store_id = db.Column(db.Integer, db.ForeignKey(
-        'stores.store_id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey(
-        'products.product_id'), nullable=False)
-    quantity = (db.Integer)
+#     stock_id = db.Column(db.Integer, primary_key=True)
+#     store_id = db.Column(db.Integer, db.ForeignKey(
+#         'stores.store_id'), nullable=False)
+#     product_id = db.Column(db.Integer, db.ForeignKey(
+#         'products.product_id'), nullable=False)
+#     quantity = (db.Integer)
 
-    def __repr__(self):
-        return '<Stocks {}>'.format(self.quantity)
+#     def __repr__(self):
+#         return '<Stocks {}>'.format(self.quantity)
 
-
+tags = db.Table('stocks',
+    db.Column('store_id', db.Integer, db.ForeignKey('stores.store_id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('products.product_id'), primary_key=True),
+    db.Column('quantity', db.Integer)
+)
 class Customers(db.Model):
     __tablename__ = 'customers'
 
@@ -120,7 +124,7 @@ class Staffs(db.Model):
     __tablename__ = 'staffs'
 
     staff_id = db.Column(db.Integer, primary_key=True)
-    fisrt_name = db.Column(db.String(255))
+    fisrt_name = db.Column(db.String(255), nullable=True)
     last_name = db.Column(db.String(255))
     phone = db.Column(db.String(10))
     email = db.Column(db.String(255))
