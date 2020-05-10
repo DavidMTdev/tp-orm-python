@@ -70,7 +70,7 @@ class Products(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey(
         'categories.category_id'), nullable=False)
     model_year = db.Column(db.DateTime)
-    list_price = product_name = db.Column(db.Float())
+    list_price = db.Column(db.Float())
 
     product_stock = db.relationship(
         'Stocks', backref=db.backref('products', lazy=True))
