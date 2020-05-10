@@ -123,7 +123,7 @@ class Orders(db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey(
         'customers.customer_id'), nullable=False)
-    order_status = (db.Integer)
+    order_status = db.Column(db.Integer)
     order_date = db.Column(db.DateTime)
     required_date = db.Column(db.DateTime)
     shipped_date = db.Column(db.DateTime)
@@ -145,9 +145,9 @@ class Order_items(db.Model):
         'orders.order_id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey(
         'products.product_id'), nullable=False)
-    quantity = (db.Integer)
-    list_price = (db.Float())
-    discount = (db.Float())
+    quantity = db.Column(db.Integer)
+    list_price = db.Column(db.Float())
+    discount = db.Column(db.Float())
 
     def __repr__(self):
         return '<Order_items {}>'.format(self.quantity)
