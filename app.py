@@ -15,12 +15,10 @@ class Brands(db.Model):
     brand_id = db.Column(db.Integer, primary_key=True)
     brand_name = db.Column(db.String(255))
 
-    brand = db.relationship(
-        'Products', backref=db.backref('brands', lazy=True))
+    product = db.relationship('Products', backref='brand')
 
     def __repr__(self):
         return '<Brands {}>'.format(self.brand_name)
-
 
 class Categories(db.Model):
     __tablename__ = 'categories'
@@ -28,12 +26,16 @@ class Categories(db.Model):
     category_id = db.Column(db.Integer, primary_key=True)
     category_name = db.Column(db.String(255))
 
-    category = db.relationship(
-        'Products', backref=db.backref('categories', lazy=True))
+    category = db.relationship('Products', backref='category')
 
     def __repr__(self):
         return '<Categories {}>'.format(self.category_name)
 
+stock = db.Table('stocks',
+    db.Column('store_id', db.Integer, db.ForeignKey('stores.store_id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('products.product_id'), primary_key=True),
+    db.Column('quantity', db.Integer)
+)
 
 class Stores(db.Model):
     __tablename__ = 'stores'
@@ -47,14 +49,11 @@ class Stores(db.Model):
     state = db.Column(db.String(255))
     zip_code = db.Column(db.Integer)
 
-    category_stocks = db.relationship(
-        'Stores', backref=db.backref('stocks', lazy=True))
+    category_stocks = db.relationship('Products', secondary=stock, backref=db.backref('contains', lazy='dynamic'))
 
-    category_staffs = db.relationship(
-        'Stores', backref=db.backref('staffs', lazy=True))
+    category_staffs = db.relationship('Staffs', backref='staff')
 
-    category_stocks = db.relationship(
-        'Stores', backref=db.backref('orders', lazy=True))
+    category_orders = db.relationship('Orders', backref='store')
 
     def __repr__(self):
         return '<Stores {}>'.format(self.store_name)
@@ -72,34 +71,11 @@ class Products(db.Model):
     model_year = db.Column(db.DateTime)
     list_price = db.Column(db.Float())
 
-    product_stock = db.relationship(
-        'Stocks', backref=db.backref('products', lazy=True))
-
-    product_order_items = db.relationship(
-        'Stocks', backref=db.backref('order_items', lazy=True))
+    product_order_items = db.relationship('Order_items', backref='product')
 
     def __repr__(self):
         return '<Products {}>'.format(self.product_name)
 
-
-# class Stocks(db.Model):
-#     __tablename__ = 'stocks'
-
-#     stock_id = db.Column(db.Integer, primary_key=True)
-#     store_id = db.Column(db.Integer, db.ForeignKey(
-#         'stores.store_id'), nullable=False)
-#     product_id = db.Column(db.Integer, db.ForeignKey(
-#         'products.product_id'), nullable=False)
-#     quantity = (db.Integer)
-
-#     def __repr__(self):
-#         return '<Stocks {}>'.format(self.quantity)
-
-tags = db.Table('stocks',
-    db.Column('store_id', db.Integer, db.ForeignKey('stores.store_id'), primary_key=True),
-    db.Column('product_id', db.Integer, db.ForeignKey('products.product_id'), primary_key=True),
-    db.Column('quantity', db.Integer)
-)
 class Customers(db.Model):
     __tablename__ = 'customers'
 
@@ -113,12 +89,10 @@ class Customers(db.Model):
     state = db.Column(db.String(255))
     zip_code = db.Column(db.Integer)
 
-    customer = db.relationship(
-        'Customers', backref=db.backref('orders', lazy=True))
+    customer = db.relationship('Orders', backref='customer')
 
     def __repr__(self):
         return '<Customers {}>'.format(self.first_name)
-
 
 class Staffs(db.Model):
     __tablename__ = 'staffs'
@@ -132,10 +106,12 @@ class Staffs(db.Model):
     store_id = db.Column(db.Integer, db.ForeignKey(
         'stores.store_id'), nullable=False)
     manager_id = db.Column(db.Integer, db.ForeignKey(
-        'staffs.staff_id'), nullable=False)
+        'staffs.staff_id'))
 
-    staffs = db.relationship(
-        'Staffs', backref=db.backref('staffs', lazy=True))
+    staffs = db.relationship('Staffs', remote_side=[staff_id], backref=db.backref('manage', uselist=False)) #uselist=False pour les relation OneToOne evite une erreur
+    # remote_side permet de faire un OneToOne
+
+    staffs_orders = db.relationship('Orders', backref='staff')
 
     def __repr__(self):
         return '<Staffs {}>'.format(self.first_name)
@@ -156,12 +132,10 @@ class Orders(db.Model):
     staff_id = db.Column(db.Integer, db.ForeignKey(
         'staffs.staff_id'), nullable=False)
 
-    order = db.relationship(
-        'Orders', backref=db.backref('order_items', lazy=True))
+    order = db.relationship('Order_items', backref='order')
 
     def __repr__(self):
-        return '<Orders {}>'.format(self.order_id)
-
+        return '<Orders {}>'.format(self.order_id)        
 
 class Order_items(db.Model):
     __tablename__ = 'order_items'
@@ -178,9 +152,35 @@ class Order_items(db.Model):
     def __repr__(self):
         return '<Order_items {}>'.format(self.quantity)
 
-
 @app.route('/')
 def index():
+    brand = Brands(brand_name="louis")
+    db.session.add(brand)
+
+    category = Categories(category_name="sport")
+    db.session.add(category)
+
+    store = Stores(store_name="decathlon", phone="0613922847", email="blabla@gmail.com", street="54 rue de messi", city="Paris", state="Français", zip_code=95700)
+    db.session.add(store)
+
+    product = Products(product_name="produit", brand=brand, category=category, model_year='2019-01-16 00:00:00', list_price=29.99)
+    db.session.add(product)
+
+    product.contains.append(store)
+
+    customer = Customers(fisrt_name="blibli", last_name="gagaga", phone="0613922847", email="blabla@gmail.com", street="54 rue de messi", city="Paris", state="Français", zip_code=95700)
+    db.session.add(customer)
+
+    staff = Staffs(fisrt_name="blibli", last_name="gagaga", phone="0613922847", email="blabla@gmail.com", active=True, staff=store, manage=None)
+    db.session.add(staff)
+
+    order = Orders(customer=customer, order_status=1, order_date='2019-01-16 00:00:00', required_date='2019-01-16 00:00:00', shipped_date='2019-01-16 00:00:00', store=store, staff=staff)
+    db.session.add(order)
+
+    order_item = Order_items(order=order, product=product, quantity=22, list_price=10, discount=5)
+    db.session.add(order_item)
+
+    db.session.commit()
     return "Hello World"
 
 
